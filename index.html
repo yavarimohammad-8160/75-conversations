@@ -4,17 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="۷۵ مکالمه">
 <title>۷۵ مکالمه</title>
 </head>
-<body style="font-family:Tahoma,sans-serif;background:#f3eee6;padding:24px">
+<body style="font-family:Tahoma,sans-serif;background:#f3eee6;color:#1c1917;padding:24px;line-height:1.7">
 <p id="s">در حال باز کردن درس‌ها…</p>
 <script>
 (async()=>{
+  const base = "https://cdn.jsdelivr.net/gh/yavarimohammad-8160/75-conversations@b0d9e13b3293dcd51ac7c7bbfefed059621c7967/";
   try {
     let b = "";
     for (let i = 1; i <= 20; i++) {
       const name = "p" + String(i).padStart(2,"0") + ".txt";
-      b += await (await fetch(name)).text();
+      document.getElementById("s").textContent = "در حال بارگذاری بخش " + i + " از ۲۰…";
+      const res = await fetch(base + name);
+      if (!res.ok) throw new Error(name + " " + res.status);
+      b += (await res.text()).trim();
     }
     const bin = Uint8Array.from(atob(b), c => c.charCodeAt(0));
     const ds = new DecompressionStream("gzip");
