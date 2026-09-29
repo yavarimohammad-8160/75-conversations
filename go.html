@@ -2,32 +2,84 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>۷۵ مکالمه</title>
+<style>body{font-family:sans-serif;padding:40px 20px;text-align:center;background:#f3eee6;color:#1c1915}</style>
 </head>
-<body style="font-family:sans-serif;padding:24px;text-align:center">
-<p>در حال باز کردن هفتاد مکالمه…</p>
+<body>
+<p id="msg">در حال باز کردن ۷۵ درس و نوار صدا…</p>
 <script>
 (async function () {
+  const css = `:root{--bg:#f3eee6;--ink:#1c1915;--muted:#6d6458;--line:#e3d7c6;--teal:#0f6e6b;--teal-d:#0a4f4d;--gold:#a8843d;--card:#fffdf8;--q:#143d3c;--shadow:0 10px 28px rgba(60,40,20,.07);--safe-b:env(safe-area-inset-bottom);--safe-t:env(safe-area-inset-top)}
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{font-family:Vazirmatn,\"Noto Sans Arabic\",\"Geeza Pro\",Tahoma,sans-serif;background:var(--bg);color:var(--ink);direction:rtl;line-height:1.75;font-size:17px}
+button,input,select{font-family:inherit}
+.appbar{position:sticky;top:0;z-index:20;background:rgba(243,238,230,.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:calc(10px + var(--safe-t)) 16px 12px}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.brand h1{font-size:1.12rem;margin:0}
+.brand small{color:var(--muted);font-size:.78rem}
+.search{width:100%;margin-top:10px;border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px 14px;font-size:1rem}
+.wrap{max-width:880px;margin:0 auto;padding:16px 16px calc(150px + var(--safe-b))}
+.hero{background:linear-gradient(155deg,#123f3d 0%,#1b6a61 62%,#c4a15a 140%);color:#fff;border-radius:22px;padding:22px 18px;margin-bottom:14px}
+.hero h2{margin:0 0 6px;font-size:1.32rem;line-height:1.45}
+.hero p{margin:0;opacity:.94;font-size:.95rem}
+.stats{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.stat{background:rgba(255,255,255,.14);border-radius:12px;padding:8px 10px;font-size:.82rem}
+.filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin:4px 0 12px}
+.chip{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:8px 12px;white-space:nowrap;font-size:.85rem}
+.chip.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.grid{display:grid;grid-template-columns:1fr;gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;text-align:right;box-shadow:var(--shadow);cursor:pointer;width:100%}
+.card .num{color:var(--teal);font-weight:700;font-size:.8rem}
+.card h3{margin:2px 0 4px;font-size:1.05rem}
+.card p{margin:0;color:var(--muted);font-size:.86rem}
+.en{direction:ltr;text-align:left;font-family:Georgia,\"Iowan Old Style\",Palatino,serif}
+.done-dot{float:left;width:10px;height:10px;border-radius:50%;background:#d9d0c3;margin-top:6px}
+.done-dot.on{background:#1f8a4c}
+.lesson-head{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.back,.tab,.ghost,.mark{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-size:.92rem}
+.tabs,.toggle-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tab.on,.mark.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.title-block h2{margin:0;font-size:1.25rem}
+.title-block .en{color:var(--muted);margin-top:2px}
+.turn{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px}
+.q{font-weight:700;color:var(--q)}
+.a{margin-top:6px}
+.enblock{direction:ltr;text-align:left;font-family:Georgia,\"Iowan Old Style\",Palatino,serif;font-size:1.04rem;line-height:1.55}
+.fa{color:#31423e;margin-top:4px}
+.note{background:#f7f1e4;border-right:4px solid var(--gold);border-radius:12px;padding:10px 12px;margin:8px 0 14px;font-size:.94rem}
+.fix{background:#eef6f4;border-right:4px solid var(--teal);border-radius:12px;padding:10px 12px;margin-top:8px;font-size:.9rem}
+.vocab{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px}
+.vocab .w{direction:ltr;text-align:left;font-family:Georgia,serif;font-size:1.08rem;display:block;color:var(--teal-d);font-weight:700}
+.vocab .mean{font-weight:700}
+.hidden{display:none}
+.enblock.speaking{background:#e8f4f2;outline:2px solid var(--teal);border-radius:10px;padding:6px 8px}
+.player{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#0e3331;color:#fff;padding:12px 14px calc(14px + var(--safe-b));box-shadow:0 -10px 30px rgba(14,51,49,.35)}
+.player .now{font-family:Georgia,serif;direction:ltr;text-align:left;font-size:.95rem;line-height:1.4;min-height:2.4em;background:rgba(255,255,255,.08);border-radius:12px;padding:8px 10px;margin-bottom:10px}
+.player .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.player button,.player select{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:14px;padding:14px 8px;font-size:.95rem;min-height:48px}
+.player button.main{background:#c4a15a;color:#1c1915;font-weight:700}
+.player button.stop{background:#b42318;color:#fff}
+.player .meta{grid-column:1/-1;font-size:.8rem;opacity:.85;text-align:center}
+.speak-one{border:1px solid var(--line);background:#f7f1e4;border-radius:999px;padding:6px 10px;font-size:.8rem;margin:0 0 8px}
+.addbox{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:14px}
+.addbox textarea,.addbox input{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px;margin:6px 0 10px;font-size:1rem}
+h3.sec{margin:16px 0 8px;font-size:1.05rem}`;
   const urls = [
-    "https://raw.githubusercontent.com/yavarimohammad-8160/75-conversations/6d3b58fb9566473539aeed2751d8b1290ddb7079/index.html",
-    "https://cdn.jsdelivr.net/gh/yavarimohammad-8160/75-conversations@6d3b58fb9566473539aeed2751d8b1290ddb7079/index.html"
+    \"https://raw.githubusercontent.com/yavarimohammad-8160/75-conversations/6d3b58fb9566473539aeed2751d8b1290ddb7079/index.html\",
+    \"https://cdn.jsdelivr.net/gh/yavarimohammad-8160/75-conversations@6d3b58fb9566473539aeed2751d8b1290ddb7079/index.html\"
   ];
-  let html = "";
+  let html = \"\";
   for (const u of urls) {
-    try {
-      const r = await fetch(u);
-      if (r.ok) { html = await r.text(); break; }
-    } catch (e) {}
+    try { const r = await fetch(u); if (r.ok) { html = await r.text(); break; } } catch (e) {}
   }
-  if (!html) {
-    document.body.innerHTML = "<p>بارگذاری نشد. صفحه را دوباره باز کنید.</p>";
-    return;
-  }
-  html = html.replace("const LESSONS =", "window.LESSONS =");
-  document.open();
-  document.write(html);
-  document.close();
+  if (!html) { document.getElementById(\"msg\").textContent = \"بارگذاری نشد.\"; return; }
+  html = html.replace(\"const LESSONS =\", \"window.LESSONS =\");
+  html = html.replace('<link rel=\"stylesheet\" href=\"app.css\">', \"<style>\" + css + \"</style>\");
+  html = html.replace(\"\u25b6 پخش همه\", \"\u25b6 پخش / توقف\");
+  html = html.replace(\"\u23f9 توقف\", \"قطع کامل\");
+  html = html.replace('id=\"stopBtn\"', 'id=\"stopBtn\" class=\"stop\"');
+  document.open(); document.write(html); document.close();
 })();
 </script>
 </body>
