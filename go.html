@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>۷۵ مکالمه</title>
+</head>
+<body style="font-family:sans-serif;padding:24px;text-align:center">
+<p>در حال باز کردن هفتاد مکالمه…</p>
+<script>
+(async function () {
+  const urls = [
+    "https://raw.githubusercontent.com/yavarimohammad-8160/75-conversations/6d3b58fb9566473539aeed2751d8b1290ddb7079/index.html",
+    "https://cdn.jsdelivr.net/gh/yavarimohammad-8160/75-conversations@6d3b58fb9566473539aeed2751d8b1290ddb7079/index.html"
+  ];
+  let html = "";
+  for (const u of urls) {
+    try {
+      const r = await fetch(u);
+      if (r.ok) { html = await r.text(); break; }
+    } catch (e) {}
+  }
+  if (!html) {
+    document.body.innerHTML = "<p>بارگذاری نشد. صفحه را دوباره باز کنید.</p>";
+    return;
+  }
+  html = html.replace("const LESSONS =", "window.LESSONS =");
+  document.open();
+  document.write(html);
+  document.close();
+})();
+</script>
+</body>
+</html>
