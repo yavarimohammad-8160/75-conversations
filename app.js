@@ -1,0 +1,311 @@
+const KEY = "en75-done-v1";
+const CUSTOM = "en75-custom-v1";
+const done = new Set(JSON.parse(localStorage.getItem(KEY) || "[]"));
+let custom = JSON.parse(localStorage.getItem(CUSTOM) || "[]");
+let showFa = true;
+let tab = "talk";
+let filter = "all";
+let current = null;
+
+const tts = {
+  queue: [],
+  idx: 0,
+  playing: false,
+  paused: false,
+  rate: 0.92,
+  voice: null,
+  loopOne: false,
+  loopAll: false
+};
+
+function allLessons() {
+  return (window.LESSONS || []).concat(custom);
+}
+function saveDone() { localStorage.setItem(KEY, JSON.stringify([...done])); }
+function esc(s) {
+  return String(s || "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+}
+function matches(L, query) {
+  if (!query) return true;
+  const blob = [L.fa, L.en, L.grammar, ...(L.qa||[]).flat(), ...(L.vocab||[]).flat()].join(" ").toLowerCase();
+  return blob.includes(query.toLowerCase());
+}
+
+function pickAmericanVoice() {
+  const voices = speechSynthesis.getVoices() || [];
+  const prefer = ["Samantha", "Aaron", "Nicky", "Evan", "Allison", "Susan", "Google US English", "Microsoft Ava", "Microsoft Guy", "en-US"];
+  for (const name of prefer) {
+    const v = voices.find(x => (x.name || "").includes(name) && /en(-|_)US/i.test(x.lang || "en-US"));
+    if (v) return v;
+  }
+  return voices.find(v => /en(-|_)US/i.test(v.lang)) || voices.find(v => /^en/i.test(v.lang)) || null;
+}
+function refreshVoice() { tts.voice = pickAmericanVoice(); }
+if (window.speechSynthesis) {
+  refreshVoice();
+  speechSynthesis.onvoiceschanged = refreshVoice;
+}
+
+function lessonEnglishLines(L) {
+  const out = [];
+  (L.qa || []).forEach((row, i) => {
+    if (row[0]) out.push({ text: row[0], key: "q-" + i });
+    const ans = row[4] || row[2];
+    if (ans) out.push({ text: ans, key: "a-" + i });
+  });
+  return out;
+}
+
+function stopTalk() {
+  tts.playing = false;
+  tts.paused = false;
+  tts.loopOne = false;
+  try { speechSynthesis.cancel(); } catch (e) {}
+  document.querySelectorAll(".enblock.speaking").forEach(el => el.classList.remove("speaking"));
+  updatePlayerUI();
+}
+
+function speakCurrent() {
+  if (!tts.playing || tts.paused) return;
+  const item = tts.queue[tts.idx];
+  if (!item) {
+    if (tts.loopAll && tts.queue.length) { tts.idx = 0; speakCurrent(); return; }
+    stopTalk();
+    return;
+  }
+  document.querySelectorAll(".enblock.speaking").forEach(el => el.classList.remove("speaking"));
+  const el = document.querySelector('[data-line="' + item.key + '"]');
+  if (el) {
+    el.classList.add("speaking");
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  const u = new SpeechSynthesisUtterance(item.text);
+  u.lang = "en-US";
+  u.rate = tts.rate;
+  u.pitch = 1;
+  if (tts.voice) u.voice = tts.voice;
+  u.onend = function () {
+    if (!tts.playing || tts.paused) return;
+    if (tts.loopOne) { speakCurrent(); return; }
+    tts.idx += 1;
+    speakCurrent();
+  };
+  u.onerror = function () {
+    if (!tts.playing) return;
+    tts.idx += 1;
+    speakCurrent();
+  };
+  speechSynthesis.speak(u);
+  updatePlayerUI();
+}
+
+function playFrom(startIdx) {
+  if (!current || !window.speechSynthesis) {
+    alert("خواندن صدا روی این مرورگر در دسترس نیست. در سافاری آیفون امتحان کنید.");
+    return;
+  }
+  speechSynthesis.cancel();
+  tts.queue = lessonEnglishLines(current);
+  if (!tts.queue.length) return;
+  tts.idx = Math.max(0, Math.min(startIdx || 0, tts.queue.length - 1));
+  tts.playing = true;
+  tts.paused = false;
+  refreshVoice();
+  speakCurrent();
+}
+
+function togglePause() {
+  if (!tts.playing) { playFrom(0); return; }
+  if (tts.paused) {
+    tts.paused = false;
+    if (speechSynthesis.paused) speechSynthesis.resume();
+    else speakCurrent();
+  } else {
+    tts.paused = true;
+    try { speechSynthesis.pause(); } catch (e) {}
+    if (!speechSynthesis.paused) speechSynthesis.cancel();
+  }
+  updatePlayerUI();
+}
+
+function repeatOne() {
+  if (!tts.queue.length) tts.queue = current ? lessonEnglishLines(current) : [];
+  tts.loopOne = !tts.loopOne;
+  tts.loopAll = false;
+  if (!tts.playing) playFrom(tts.idx || 0);
+  updatePlayerUI();
+}
+
+function updatePlayerUI() {
+  const now = document.getElementById("nowLine");
+  const meta = document.getElementById("playMeta");
+  const playBtn = document.getElementById("playBtn");
+  const loopBtn = document.getElementById("loopOneBtn");
+  if (!now) return;
+  const item = tts.queue[tts.idx];
+  now.textContent = item ? item.text : "فقط جمله‌های انگلیسی این درس خوانده می‌شود (لهجه آمریکایی).";
+  if (meta) meta.textContent = tts.queue.length ? ((tts.idx + 1) + " / " + tts.queue.length) : "";
+  if (playBtn) playBtn.textContent = (!tts.playing || tts.paused) ? "\u25b6 پخش" : "\u23f8 توقف";
+  if (loopBtn) loopBtn.textContent = tts.loopOne ? "تکرار جمله \u2713" : "تکرار جمله";
+}
+
+function renderHome() {
+  stopTalk();
+  current = null;
+  const query = document.getElementById("q").value.trim();
+  const lessons = allLessons().filter(L => matches(L, query) && (filter === "all" || (filter === "done" && done.has(L.id)) || (filter === "todo" && !done.has(L.id)) || (filter === "mine" && L.custom)));
+  const total = (window.LESSONS || []).length;
+  document.getElementById("progressLabel").textContent = done.size + " از " + total + " خوانده‌شده";
+  document.getElementById("app").innerHTML = `
+    <section class="hero">
+      <h2>مکالمه، ترجمه، واژگان و صدا</h2>
+      <p>هر درس را باز کنید و با دکمه پخش، فقط جمله‌های انگلیسی را با لهجه آمریکایی بشنوید.</p>
+      <div class="stats">
+        <div class="stat">${total} درس کتاب</div>
+        <div class="stat">${custom.length} درس افزوده‌شده</div>
+        <div class="stat">صدای آمریکایی آیفون</div>
+      </div>
+    </section>
+    <div class="filters">
+      ${[["all","همه"],["todo","نخوانده"],["done","خوانده‌شده"],["mine","درس‌های خودمان"]].map(([k,l]) => `<button class="chip ${filter===k?"on":""}" data-f="${k}">${l}</button>`).join("")}
+    </div>
+    <div class="grid">
+      ${lessons.map(L => `
+        <button class="card" data-id="${esc(L.id)}">
+          <span class="done-dot ${done.has(L.id)?"on":""}"></span>
+          <div class="num">درس ${esc(L.n)}</div>
+          <h3>${esc(L.fa)}</h3>
+          <p class="en">${esc(L.en)}</p>
+        </button>`).join("") || "<p>چیزی پیدا نشد.</p>"}
+    </div>
+    <section class="addbox">
+      <h3 style="margin:0 0 6px">افزودن درس بعدی</h3>
+      <p style="margin:0;color:#6d6458;font-size:.9rem">فقط روی همین گوشی ذخیره می‌شود.</p>
+      <input id="cFa" placeholder="عنوان فارسی">
+      <input id="cEn" placeholder="English title">
+      <textarea id="cBody" rows="6" placeholder="Q: Do you work?\nA: Yes, I do."></textarea>
+      <button class="mark on" id="addBtn">ذخیرهٔ درس</button>
+    </section>
+  `;
+  document.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { filter = b.dataset.f; renderHome(); });
+  document.querySelectorAll("[data-id]").forEach(b => b.onclick = () => openLesson(b.dataset.id));
+  const add = document.getElementById("addBtn");
+  if (add) add.onclick = addCustom;
+}
+function addCustom() {
+  const fa = document.getElementById("cFa").value.trim();
+  const en = document.getElementById("cEn").value.trim() || "Custom lesson";
+  const body = document.getElementById("cBody").value.trim();
+  if (!fa || !body) { alert("عنوان فارسی و متن گفت‌وگو لازم است."); return; }
+  const blocks = body.split(/\n\s*\n/);
+  const qa = blocks.map(block => {
+    const lines = block.split("\n").map(x => x.trim()).filter(Boolean);
+    const q = (lines.find(l => /^q:/i.test(l)) || lines[0] || "").replace(/^q:\s*/i, "");
+    const a = (lines.find(l => /^a:/i.test(l)) || lines[1] || "").replace(/^a:\s*/i, "");
+    return [q, "", a, ""];
+  }).filter(x => x[0]);
+  custom.push({ id: "c" + Date.now(), n: "＋", fa, en, custom: true, qa, vocab: [], grammar: "این درس را خودتان اضافه کرده‌اید." });
+  localStorage.setItem(CUSTOM, JSON.stringify(custom));
+  filter = "mine";
+  renderHome();
+}
+function openLesson(id) {
+  const L = allLessons().find(x => x.id === id);
+  if (!L) return;
+  stopTalk();
+  current = L;
+  tab = "talk";
+  renderLesson();
+  window.scrollTo(0, 0);
+}
+function renderLesson() {
+  const L = current;
+  document.getElementById("progressLabel").textContent = L.fa;
+  const turns = (L.qa || []).map((row, i) => `
+    <article class="turn">
+      <button class="speak-one" data-start="${i * 2}">🔊 این پرسش</button>
+      <div class="q enblock" data-line="q-${i}">${esc(row[0])}</div>
+      ${showFa && row[1] ? `<div class="fa">${esc(row[1])}</div>` : ""}
+      <button class="speak-one" data-start="${i * 2 + 1}">🔊 این جواب</button>
+      <div class="a enblock" data-line="a-${i}">${esc(row[2])}</div>
+      ${showFa && row[3] ? `<div class="fa">${esc(row[3])}</div>` : ""}
+      ${row[4] ? `<div class="fix"><b>طبیعی‌تر:</b> <span class="en">${esc(row[4])}</span>${row[5] ? `<div>${esc(row[5])}</div>` : ""}</div>` : ""}
+    </article>`).join("");
+  const voc = (L.vocab || []).map(v => `
+    <article class="vocab">
+      <span class="w">${esc(v[0])}</span>
+      <div class="mean">${esc(v[1])}</div>
+      <div>${esc(v[2])}</div>
+    </article>`).join("") || "<p>برای این درس واژه‌ای ثبت نشده.</p>";
+  document.getElementById("app").innerHTML = `
+    <div class="lesson-head">
+      <button class="back" id="back">فهرست</button>
+      <button class="mark ${done.has(L.id)?"on":""}" id="mark">${done.has(L.id)?"خواندم \u2713":"علامت به‌عنوان خوانده‌شده"}</button>
+    </div>
+    <div class="title-block">
+      <div class="num" style="color:#0f6e6b;font-weight:700">درس ${esc(L.n)}</div>
+      <h2>${esc(L.fa)}</h2>
+      <div class="en">${esc(L.en)}</div>
+    </div>
+    <div class="tabs">
+      <button class="tab ${tab==="talk"?"on":""}" data-t="talk">مکالمه و ترجمه</button>
+      <button class="tab ${tab==="vocab"?"on":""}" data-t="vocab">واژگان و گرامر</button>
+    </div>
+    <div class="toggle-row">
+      <button class="ghost" id="faToggle">${showFa?"مخفی کردن ترجمه":"نمایش ترجمه"}</button>
+    </div>
+    <section class="${tab==="talk"?"":"hidden"}">${turns}</section>
+    <section class="${tab==="vocab"?"":"hidden"} print-break">
+      <h3 class="sec">واژه‌ها و عبارت‌های مهم</h3>
+      ${voc}
+      <h3 class="sec">نکتهٔ گرامری این درس</h3>
+      <div class="note">${esc(L.grammar || "")}</div>
+    </section>
+    <div class="player" id="player">
+      <div class="now" id="nowLine">فقط جمله‌های انگلیسی این درس خوانده می‌شود (لهجه آمریکایی).</div>
+      <div class="row">
+        <button class="main" id="playBtn">\u25b6 پخش همه</button>
+        <button id="prevBtn">قبلی</button>
+        <button id="nextBtn">بعدی</button>
+        <button id="loopOneBtn">تکرار جمله</button>
+        <button id="stopBtn">\u23f9 توقف</button>
+        <select id="rateSel">
+          <option value="0.75">آهسته</option>
+          <option value="0.92" selected>عادی</option>
+          <option value="1.1">کمی تند</option>
+          <option value="1.25">تند</option>
+        </select>
+        <span class="meta" id="playMeta"></span>
+      </div>
+    </div>
+  `;
+  document.getElementById("back").onclick = renderHome;
+  document.getElementById("mark").onclick = () => {
+    if (done.has(L.id)) done.delete(L.id); else done.add(L.id);
+    saveDone(); renderLesson();
+  };
+  document.getElementById("faToggle").onclick = () => { showFa = !showFa; renderLesson(); };
+  document.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { tab = b.dataset.t; renderLesson(); });
+  document.getElementById("playBtn").onclick = togglePause;
+  document.getElementById("stopBtn").onclick = stopTalk;
+  document.getElementById("loopOneBtn").onclick = repeatOne;
+  document.getElementById("prevBtn").onclick = () => {
+    tts.queue = lessonEnglishLines(current);
+    playFrom(Math.max(0, (tts.idx || 0) - 1));
+  };
+  document.getElementById("nextBtn").onclick = () => {
+    tts.queue = lessonEnglishLines(current);
+    playFrom(Math.min(tts.queue.length - 1, (tts.idx || 0) + 1));
+  };
+  document.getElementById("rateSel").onchange = e => {
+    tts.rate = parseFloat(e.target.value);
+    if (tts.playing && !tts.paused) playFrom(tts.idx);
+  };
+  document.querySelectorAll("[data-start]").forEach(b => {
+    b.onclick = () => playFrom(parseInt(b.dataset.start, 10));
+  });
+  tts.queue = lessonEnglishLines(L);
+  updatePlayerUI();
+}
+document.getElementById("q").addEventListener("input", () => { if (!current) renderHome(); });
+renderHome();
