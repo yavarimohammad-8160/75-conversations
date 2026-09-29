@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>۷۵ مکالمه</title>
+</head>
+<body style="font-family:Tahoma,sans-serif;background:#f3eee6;padding:24px">
+<p id="s">در حال باز کردن درس‌ها…</p>
+<script>
+(async()=>{
+  try {
+    let b = "";
+    for (let i = 1; i <= 6; i++) b += await (await fetch("p"+i+".txt")).text();
+    const bin = Uint8Array.from(atob(b), c => c.charCodeAt(0));
+    const ds = new DecompressionStream("gzip");
+    const html = await new Response(new Blob([bin]).stream().pipeThrough(ds)).text();
+    document.open();
+    document.write(html);
+    document.close();
+  } catch (e) {
+    document.getElementById("s").textContent = "باز نشد: " + e;
+  }
+})();
+</script>
+</body>
+</html>
