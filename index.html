@@ -7,28 +7,32 @@
 <meta name="apple-mobile-web-app-title" content="۷۵ مکالمه">
 <title>۷۵ مکالمه</title>
 </head>
-<body style="font-family:Tahoma,sans-serif;background:#f3eee6;color:#1c1917;padding:24px;line-height:1.7">
+<body style="font-family:Tahoma,sans-serif;background:#f3eee6;color:#1c1917;padding:24px;line-height:1.8">
 <p id="s">در حال باز کردن درس‌ها…</p>
 <script>
 (async()=>{
   const base = "https://cdn.jsdelivr.net/gh/yavarimohammad-8160/75-conversations@b0d9e13b3293dcd51ac7c7bbfefed059621c7967/";
-  try {
-    let b = "";
-    for (let i = 1; i <= 20; i++) {
-      const name = "p" + String(i).padStart(2,"0") + ".txt";
-      document.getElementById("s").textContent = "در حال بارگذاری بخش " + i + " از ۲۰…";
-      const res = await fetch(base + name);
-      if (!res.ok) throw new Error(name + " " + res.status);
-      b += (await res.text()).trim();
+  const s = document.getElementById("s");
+  async function getPart(i) {
+    const name = "p" + String(i).padStart(2,"0") + ".txt";
+    let last;
+    for (let t = 0; t < 4; t++) {
+      try {
+        const res = await fetch(base + name + "?t=" + t);
+        if (!res.ok) throw new Error(name + " " + res.status);
+        return (await res.text()).trim();
+      } catch (e) { last = e; await new Promise(r => setTimeout(r, 400 * (t + 1))); }
     }
-    const bin = Uint8Array.from(atob(b), c => c.charCodeAt(0));
-    const ds = new DecompressionStream("gzip");
-    const html = await new Response(new Blob([bin]).stream().pipeThrough(ds)).text();
-    document.open();
-    document.write(html);
-    document.close();
+    throw last;
+  }
+  try {
+    let done = 0;
+    const parts = await Promise.all(Array.from({length:20}, (_,n) => getPart(n+1).then(t => { done++; s.textContent = "در حال بارگذاری " + done + " از ۲۰…"; return t; })));
+    const bin = Uint8Array.from(atob(parts.join("")), c => c.charCodeAt(0));
+    const html = await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+    document.open(); document.write(html); document.close();
   } catch (e) {
-    document.getElementById("s").textContent = "باز نشد: " + e;
+    s.textContent = "باز نشد. یک بار صفحه را تازه کنید. " + e;
   }
 })();
 </script>
