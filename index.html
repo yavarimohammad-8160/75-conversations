@@ -4,40 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="۷۵ مکالمه">
-<title>۷۵ مکالمه برای یادگیری انگلیسی</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap">
+<title>۷۵ مکالمه</title>
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
 <header class="appbar">
   <div class="brand">
     <h1>۷۵ مکالمه انگلیسی</h1>
-    <small id="progressLabel">در حال بارگذاری…</small>
+    <small id="progressLabel">بارگذاری…</small>
   </div>
-  <input id="q" class="search" placeholder="جست‌وجو: خانواده، travel، used to..." autocomplete="off">
+  <input id="q" class="search" placeholder="جست‌وجو" autocomplete="off">
 </header>
-<main class="wrap" id="app"><p style="padding:24px;text-align:center">در حال بارگذاری ۷۵ درس…</p></main>
+<main class="wrap" id="app"></main>
+<script src="lessons-01.js"></script>
+<script src="lessons-02.js"></script>
+<script src="lessons-03.js"></script>
+<script src="lessons-04.js"></script>
+<script src="lessons-05.js"></script>
+<script src="lessons-06.js"></script>
+<script src="lessons-07.js"></script>
+<script src="lessons-08.js"></script>
 <script src="app.js"></script>
-<script>
-(async function () {
-  try {
-    let b = "";
-    for (let i = 1; i <= 18; i++) {
-      const name = "p" + String(i).padStart(2, "0") + ".txt";
-      const r = await fetch(name);
-      if (!r.ok) throw new Error(name + " " + r.status);
-      b += await r.text();
-    }
-    const bin = Uint8Array.from(atob(b.trim()), c => c.charCodeAt(0));
-    const text = await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
-    (0, eval)(text);
-    if (typeof renderHome === "function") renderHome();
-    else document.getElementById("app").innerHTML = "<p>درس‌ها آمدند ولی رابط اجرا نشد.</p>";
-  } catch (e) {
-    document.getElementById("app").innerHTML = "<p>خطا در بارگذاری درس‌ها. صفحه را دوباره باز کنید.</p><pre>" + e + "</pre>";
-  }
-})();
-</script>
 </body>
 </html>
