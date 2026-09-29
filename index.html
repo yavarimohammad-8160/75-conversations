@@ -12,7 +12,10 @@
 (async()=>{
   try {
     let b = "";
-    for (let i = 1; i <= 6; i++) b += await (await fetch("p"+i+".txt")).text();
+    for (let i = 1; i <= 20; i++) {
+      const name = "p" + String(i).padStart(2,"0") + ".txt";
+      b += await (await fetch(name)).text();
+    }
     const bin = Uint8Array.from(atob(b), c => c.charCodeAt(0));
     const ds = new DecompressionStream("gzip");
     const html = await new Response(new Blob([bin]).stream().pipeThrough(ds)).text();
