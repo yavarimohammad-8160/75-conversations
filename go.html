@@ -17,8 +17,8 @@
     '.player button.main{background:#c4a15a;color:#1c1915;font-weight:700}' +
     '.player button.stop{background:#b42318;color:#fff}' +
     '.wrap{padding-bottom:160px}' +
-    '.note,.vocab{unicode-bidi:isolate}' +
-    '.ltr{direction:ltr;unicode-bidi:isolate;display:inline;font-family:Georgia,serif}';
+    '.note,.vocab{unicode-bidi:plaintext}' +
+    '.ltr{direction:ltr;unicode-bidi:isolate;display:inline-block;font-family:Georgia,serif;background:#f3eee6;border-radius:6px;padding:0 5px;margin:0 2px}';
   try {
     var page = await (await fetch(pageUrl)).text();
     var css = '';
@@ -34,14 +34,11 @@
     );
     page = page.replace(
       'function esc(s) {',
-      'function mixDir(s){return String(s||"").replace(/[A-Za-z][A-Za-z0-9\u0027\u2019.\-\/ ]{0,80}/g,function(m){return "<span class=\\"ltr\\" dir=\\"ltr\\">"+m+"</span>";});}\nfunction esc(s) {'
+      'function mixDir(s){return String(s||"").replace(/[A-Za-z][A-Za-z0-9\u0027\u2019.,:;!?()\/\- ]{0,100}[A-Za-z.?]/g,function(m){return "<span class=\\"ltr\\" dir=\\"ltr\\">"+m.trim()+"</span>";});}\nfunction esc(s) {'
     );
     page = page.replace('${esc(L.grammar || "")}', '${mixDir(esc(L.grammar || ""))}');
     page = page.replace('${esc(v[2])}', '${mixDir(esc(v[2]))}');
-    page = page.replace(
-      'u.rate = tts.rate;',
-      'u.rate = Number(tts.rate)||0.7; u.volume = 1;'
-    );
+    page = page.replace('u.rate = tts.rate;', 'u.rate = Number(tts.rate)||0.7; u.volume = 1;');
     document.open();
     document.write(page);
     document.close();
