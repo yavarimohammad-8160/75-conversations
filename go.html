@@ -11,7 +11,14 @@
 (async function(){
   var cssUrl = 'https://raw.githubusercontent.com/yavarimohammad-8160/75-conversations/6d3b58fb9566473539aeed2751d8b1290ddb7079/app.css';
   var pageUrl = 'https://raw.githubusercontent.com/yavarimohammad-8160/75-conversations/6d3b58fb9566473539aeed2751d8b1290ddb7079/index.html';
-  var extra = '.player{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#0e3331;color:#fff;padding:12px 14px 18px}.player .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.player button,.player select{min-height:48px;border-radius:14px;padding:14px 8px;font-size:16px;border:0;background:rgba(255,255,255,.16);color:#fff}.player button.main{background:#c4a15a;color:#1c1915;font-weight:700}.player button.stop{background:#b42318;color:#fff}.wrap{padding-bottom:160px}';
+  var extra = '.player{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#0e3331;color:#fff;padding:12px 14px 18px}' +
+    '.player .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}' +
+    '.player button,.player select{min-height:48px;border-radius:14px;padding:14px 8px;font-size:16px;border:0;background:rgba(255,255,255,.16);color:#fff}' +
+    '.player button.main{background:#c4a15a;color:#1c1915;font-weight:700}' +
+    '.player button.stop{background:#b42318;color:#fff}' +
+    '.wrap{padding-bottom:160px}' +
+    '.note,.vocab{unicode-bidi:isolate}' +
+    '.ltr{direction:ltr;unicode-bidi:isolate;display:inline;font-family:Georgia,serif}';
   try {
     var page = await (await fetch(pageUrl)).text();
     var css = '';
@@ -20,6 +27,21 @@
     page = page.replace('<link rel="stylesheet" href="app.css">', '<style>'+css+extra+'</style>');
     page = page.replace('پخش همه', 'پخش / توقف');
     page = page.replace('id="stopBtn"', 'id="stopBtn" class="stop"');
+    page = page.replace('rate: 0.92', 'rate: 0.7');
+    page = page.replace(
+      '<option value="0.75">آهسته</option>\n          <option value="0.92" selected>عادی</option>\n          <option value="1.1">کمی تند</option>\n          <option value="1.25">تند</option>',
+      '<option value="0.5">خیلی آهسته</option>\n          <option value="0.7" selected>عادی</option>\n          <option value="0.9">کمی تند</option>\n          <option value="1.1">تند</option>'
+    );
+    page = page.replace(
+      'function esc(s) {',
+      'function mixDir(s){return String(s||"").replace(/[A-Za-z][A-Za-z0-9\u0027\u2019.\-\/ ]{0,80}/g,function(m){return "<span class=\\"ltr\\" dir=\\"ltr\\">"+m+"</span>";});}\nfunction esc(s) {'
+    );
+    page = page.replace('${esc(L.grammar || "")}', '${mixDir(esc(L.grammar || ""))}');
+    page = page.replace('${esc(v[2])}', '${mixDir(esc(v[2]))}');
+    page = page.replace(
+      'u.rate = tts.rate;',
+      'u.rate = Number(tts.rate)||0.7; u.volume = 1;'
+    );
     document.open();
     document.write(page);
     document.close();
